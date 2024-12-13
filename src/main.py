@@ -166,6 +166,7 @@ try:
 except KeyboardInterrupt:
     print("Игра завершена пользователем.")
 
+
 finally:
     pygame.quit()
     sys.exit()
