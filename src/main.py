@@ -163,6 +163,7 @@ try:
                 player.rect.center = (WIDTH // 2, HEIGHT // 2)
                 player.vel_y = 0
 
+
 except KeyboardInterrupt:
     print("Игра завершена пользователем.")
 
