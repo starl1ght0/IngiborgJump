@@ -28,9 +28,10 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT // 2)
         self.vel_y = 0
+        self.score = 0  # Счетчик расстояния
 
     def update(self):
-        self.vel_y += 0.3  # Гравитация
+        self.vel_y += 0.2  # Гравитация
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             self.rect.x -= 6
@@ -49,7 +50,7 @@ class Player(pygame.sprite.Sprite):
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((100, 10))
+        self.image = pygame.Surface((80, 10))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -95,11 +96,19 @@ all_sprites.add(player)
 
 # Создание начальных платформ
 for i in range(6):
-    x = random.randint(0, WIDTH - 100)
-    y = random.randint(i * 100, i * 100 + 50)
+    if i == 0:
+        # Первая платформа под игроком
+        x = WIDTH // 2 - 40
+        y = HEIGHT // 2 + 50
+    else:
+        x = random.randint(0, WIDTH - 100)
+        y = random.randint(i * 100, i * 100 + 100)
     platform = Platform(x, y)
     all_sprites.add(platform)
     platforms.add(platform)
+
+# Шрифт для отображения счета
+font = pygame.font.SysFont('Arial', 24)
 
 # Основной игровой цикл
 running = True
@@ -130,8 +139,9 @@ try:
                 game_over = True  # Устанавливаем флаг окончания игры
 
             # Прокрутка экрана вверх, если игрок поднимается
-            if player.rect.top <= HEIGHT // 4:
+            if player.rect.top <= HEIGHT // 2.5:
                 player.rect.y += abs(player.vel_y)
+                player.score += abs(player.vel_y)  # Увеличиваем счет
                 for platform in platforms:
                     platform.rect.y += abs(player.vel_y)
                     # Удаление платформ, которые вышли за нижнюю границу
@@ -139,8 +149,8 @@ try:
                         platform.kill()
 
             # Добавление новых платформ
-            while len(platforms) < 6:
-                x = random.randint(0, WIDTH - 100)
+            while len(platforms) < 7:
+                x = random.randint(0, WIDTH - 200)
                 y = random.randint(-50, 0)
                 platform = Platform(x, y)
                 all_sprites.add(platform)
@@ -149,6 +159,11 @@ try:
             # Рендеринг
             screen.fill(BLACK)
             all_sprites.draw(screen)
+
+            # Отображение счета
+            score_text = font.render(f"Score: {int(player.score)}", True, WHITE)
+            screen.blit(score_text, (10, 10))
+
             pygame.display.flip()
         else:
             # Отображение экрана "Game Over"
@@ -162,10 +177,10 @@ try:
                 game_over = False
                 player.rect.center = (WIDTH // 2, HEIGHT // 2)
                 player.vel_y = 0
+                player.score = 0  # Сброс счета
 
 except KeyboardInterrupt:
     print("Игра завершена пользователем.")
-
 
 finally:
     pygame.quit()
