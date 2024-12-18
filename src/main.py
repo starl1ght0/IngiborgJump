@@ -9,8 +9,6 @@ pygame.init()
 WIDTH, HEIGHT = 400, 600
 FPS = 60
 WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
 RESTART_BUTTON_COLOR = (0, 255, 0)
 RESTART_BUTTON_TEXT_COLOR = (0, 0, 0)
 
@@ -19,12 +17,21 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Doodle Jump")
 clock = pygame.time.Clock()
 
+# Загрузка изображений
+background_image = pygame.image.load("../images/bgingiborg.jpg")  # Фон
+player_image = pygame.image.load("../images/Frame 3.jpg")  # Игрок
+platform_image = pygame.image.load("../images/Frame 2.png")  # Платформа
+
+# Масштабирование изображений под размеры
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
+player_image = pygame.transform.scale(player_image, (50, 60))
+platform_image = pygame.transform.scale(platform_image, (80, 10))
+
 # Класс игрока
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((50, 60))
-        self.image.fill(GREEN)
+        self.image = player_image
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT // 2)
         self.vel_y = 0
@@ -50,8 +57,7 @@ class Player(pygame.sprite.Sprite):
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((80, 10))
-        self.image.fill(WHITE)
+        self.image = platform_image
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -86,6 +92,34 @@ class GameOverScreen:
             return True
         return False
 
+def reset_game():
+    global player, platforms, all_sprites, game_over
+    player = Player()
+    all_sprites = pygame.sprite.Group()
+    platforms = pygame.sprite.Group()
+
+    all_sprites.add(player)
+
+    # Создание начальных платформ
+    for i in range(6):
+        if i == 0:
+            # Первая платформа под игроком
+            x = WIDTH // 2 - 40
+            y = HEIGHT // 2 + 50
+        else:
+            x = random.randint(0, WIDTH - 100)
+            y = random.randint(i * 100, i * 100 + 100)
+        platform = Platform(x, y)
+        all_sprites.add(platform)
+        platforms.add(platform)
+
+    game_over = False
+
+# Основной игровой цикл
+running = True
+game_over = False
+game_over_screen = GameOverScreen()
+reset_game()  # Инициализация игры
 # Создание групп спрайтов
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
@@ -157,7 +191,7 @@ try:
                 platforms.add(platform)
 
             # Рендеринг
-            screen.fill(BLACK)
+            screen.blit(background_image, (0, 0))  # Отображение фона
             all_sprites.draw(screen)
 
             # Отображение счета
@@ -167,17 +201,15 @@ try:
             pygame.display.flip()
         else:
             # Отображение экрана "Game Over"
-            screen.fill(BLACK)  # Очистка экрана
+            screen.blit(background_image, (0, 0))  # Отображение фона
             game_over_screen.display(screen)
 
             # Обработка нажатия кнопки рестарта
             mouse_pos = pygame.mouse.get_pos()
             mouse_pressed = pygame.mouse.get_pressed()
             if game_over_screen.handle_restart_button(mouse_pos, mouse_pressed):
-                game_over = False
-                player.rect.center = (WIDTH // 2, HEIGHT // 2)
-                player.vel_y = 0
-                player.score = 0  # Сброс счета
+                reset_game()
+
 
 except KeyboardInterrupt:
     print("Игра завершена пользователем.")
@@ -185,3 +217,4 @@ except KeyboardInterrupt:
 finally:
     pygame.quit()
     sys.exit()
+    
