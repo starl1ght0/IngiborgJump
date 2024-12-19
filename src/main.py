@@ -9,18 +9,19 @@ pygame.init()
 WIDTH, HEIGHT = 400, 600
 FPS = 60
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 RESTART_BUTTON_COLOR = (0, 255, 0)
 RESTART_BUTTON_TEXT_COLOR = (0, 0, 0)
 
 # Настройка экрана
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Doodle Jump")
+pygame.display.set_caption("Ingiborg Jump")
 clock = pygame.time.Clock()
 
 # Загрузка изображений
-background_image = pygame.image.load("../images/bgingiborg.jpg")  # Фон
-player_image = pygame.image.load("../images/Frame 3.jpg")  # Игрок
-platform_image = pygame.image.load("../images/Frame 2.png")  # Платформа
+background_image = pygame.image.load("images/bgingiborg.jpg")  # Фон
+player_image = pygame.image.load("images/necoarc.png")  # Игрок
+platform_image = pygame.image.load("images/Frame 2.png")  # Платформа
 
 # Масштабирование изображений под размеры
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
@@ -35,8 +36,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH // 2, HEIGHT // 2)
         self.vel_y = 0
-        self.score = 0  # Счетчик расстояния
-
+        self.score = 0
     def update(self):
         self.vel_y += 0.2  # Гравитация
         keys = pygame.key.get_pressed()
@@ -52,6 +52,23 @@ class Player(pygame.sprite.Sprite):
             self.rect.right = WIDTH
         if self.rect.right > WIDTH:
             self.rect.left = 1
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, RED, (15, 15), 15)  # Рисуем круг
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.vel_x = random.choice([-3, 3])  # Скорость врага (влево или вправо)
+
+    def update(self):
+        self.rect.x += self.vel_x
+
+        # Меняем направление, если враг достигает края экрана
+        if self.rect.left <= 0 or self.rect.right >= WIDTH:
+            self.vel_x *= -1
 
 # Класс платформы
 class Platform(pygame.sprite.Sprite):
@@ -97,6 +114,7 @@ def reset_game():
     player = Player()
     all_sprites = pygame.sprite.Group()
     platforms = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
 
     all_sprites.add(player)
 
@@ -123,6 +141,7 @@ reset_game()  # Инициализация игры
 # Создание групп спрайтов
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
 
 # Создание игрока
 player = Player()
@@ -168,6 +187,10 @@ try:
                 if hits:
                     player.vel_y = -10  # Прыжок вверх
 
+             # Проверка столкновений игрока с врагами
+            if pygame.sprite.spritecollide(player, enemies, False):
+                game_over = True  # Устанавливаем флаг окончания игры
+
             # Проверка, упал ли игрок ниже экрана
             if player.rect.top > HEIGHT:
                 game_over = True  # Устанавливаем флаг окончания игры
@@ -181,14 +204,25 @@ try:
                     # Удаление платформ, которые вышли за нижнюю границу
                     if platform.rect.top >= HEIGHT:
                         platform.kill()
+                for enemy in enemies:
+                    enemy.rect.y += abs(player.vel_y)
+                    if enemy.rect.top >= HEIGHT:
+                        enemy.kill()
 
             # Добавление новых платформ
             while len(platforms) < 7:
-                x = random.randint(0, WIDTH - 200)
-                y = random.randint(-50, 0)
+                x = random.randint(0, WIDTH - 100)
+                y = random.randint(-1, 0)
                 platform = Platform(x, y)
                 all_sprites.add(platform)
                 platforms.add(platform)
+
+            if len(enemies) < 3 and random.random() < 0.01:  # Вероятность появления врага
+                x = random.randint(0, WIDTH - 30)
+                y = random.randint(-100, -30)
+                enemy = Enemy(x, y)
+                all_sprites.add(enemy)
+                enemies.add(enemy)
 
             # Рендеринг
             screen.blit(background_image, (0, 0))  # Отображение фона
@@ -208,6 +242,7 @@ try:
             mouse_pos = pygame.mouse.get_pos()
             mouse_pressed = pygame.mouse.get_pressed()
             if game_over_screen.handle_restart_button(mouse_pos, mouse_pressed):
+                enemies.empty()  # Удаляем всех врагов
                 reset_game()
 
 
